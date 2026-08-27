@@ -1,0 +1,7 @@
+node_modules
+web/node_modules
+mcp/node_modules
+web/dist
+web/.env
+*.local
+.DS_Store

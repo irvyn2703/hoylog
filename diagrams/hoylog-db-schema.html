@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hoylog · esquema de base de datos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f7f6fb;
+      --color-ink:     #222831;
+      --color-muted:   #5c6270;
+      --color-accent:  #5955D9;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1280px; width: 100%; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .lede {
+      font-size: 0.95rem;
+      color: var(--color-muted);
+      max-width: 44rem;
+      line-height: 1.45;
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 960px; display: block; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Database schema · Hoylog</p>
+    <h1>Una tabla de notas, dos formas de usarla</h1>
+    <p class="lede">Avance y nota atemporal viven en <code>public.notes</code>. El periodo (día, semana ISO, mes, año) no se guarda: se calcula desde <code>occurred_on</code>.</p>
+
+    <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hoylog-db-schema-title hoylog-db-schema-desc">
+      <title id="hoylog-db-schema-title">Hoylog · esquema de base de datos</title>
+      <desc id="hoylog-db-schema-desc">Esquema físico de Hoylog: auth.users de Supabase, public.notes con discriminator type y fecha occurred_on, y public.api_tokens para el MCP, ambos con foreign key a users y borrado en cascada en notes.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5c6270"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#5955D9"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#421b9b"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f7f6fb"/>
+
+      <!-- Zones first -->
+      <rect x="32" y="48" width="312" height="160" rx="8" fill="rgba(34,40,49,0.02)" stroke="rgba(34,40,49,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <text x="48" y="68" fill="#7a7e8c" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">AUTH · SUPABASE</text>
+
+      <rect x="496" y="24" width="368" height="620" rx="8" fill="rgba(34,40,49,0.02)" stroke="rgba(34,40,49,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <text x="512" y="44" fill="#7a7e8c" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">PUBLIC</text>
+
+      <!-- FK connectors (before boxes) -->
+      <!-- notes.user_id → users.id · CASCADE (focal) -->
+      <path d="M 520,112 H 328" fill="none" stroke="#5955D9" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+      <!-- api_tokens.user_id → users.id · CASCADE (muted; second child of same PK) -->
+      <path d="M 520,444 H 432 Q 424,444 424,436 V 136 Q 424,128 416,128 H 328" fill="none" stroke="#5c6270" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <rect x="360" y="92" width="112" height="12" rx="2" fill="#f7f6fb"/>
+      <text x="416" y="101" fill="#5955D9" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON DELETE CASCADE</text>
+
+      <rect x="400" y="424" width="112" height="12" rx="2" fill="#f7f6fb"/>
+      <text x="456" y="433" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ON DELETE CASCADE</text>
+
+      <!-- Callout: derived periods -->
+      <text x="1240" y="200" fill="#222831" font-size="16" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="end">el calendario no es una columna</text>
+      <path d="M 1100 212 Q 980 220 840 232" fill="none" stroke="rgba(34,40,49,0.40)" stroke-width="1" stroke-dasharray="4,3"/>
+      <circle cx="840" cy="232" r="2" fill="#222831"/>
+
+      <!-- auth.users -->
+      <rect x="48" y="80" width="280" height="100" rx="6" fill="#f7f6fb"/>
+      <rect x="48" y="80" width="280" height="100" rx="6" fill="#ffffff" stroke="#222831" stroke-width="1"/>
+      <rect x="48" y="80" width="280" height="28" rx="6" fill="rgba(34,40,49,0.04)" stroke="none"/>
+      <rect x="48" y="100" width="280" height="8" fill="rgba(34,40,49,0.04)"/>
+      <line x1="48" y1="108" x2="328" y2="108" stroke="rgba(34,40,49,0.22)" stroke-width="1"/>
+      <text x="60" y="98" fill="#222831" font-size="12" font-weight="600" font-family="'Geist', sans-serif">auth.users</text>
+      <rect x="276" y="88" width="40" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.40)" stroke-width="0.8"/>
+      <text x="296" y="97" fill="#222831" opacity="0.8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TABLE</text>
+
+      <rect x="48" y="108" width="280" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="60" y="124" fill="#222831" font-size="12" font-family="'Geist', sans-serif">id</text>
+      <rect x="188" y="116" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="198" y="125" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">PK</text>
+      <text x="316" y="124" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">uuid</text>
+
+      <text x="60" y="148" fill="#222831" font-size="12" font-family="'Geist', sans-serif">email</text>
+      <text x="316" y="148" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <rect x="48" y="156" width="280" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="60" y="172" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">+ n managed by Google Auth</text>
+
+      <!-- public.notes (focal header) -->
+      <rect x="520" y="48" width="320" height="292" rx="6" fill="#f7f6fb"/>
+      <rect x="520" y="48" width="320" height="292" rx="6" fill="#ffffff" stroke="#222831" stroke-width="1"/>
+      <rect x="520" y="48" width="320" height="28" rx="6" fill="rgba(89,85,217,0.08)" stroke="none"/>
+      <rect x="520" y="68" width="320" height="8" fill="rgba(89,85,217,0.08)"/>
+      <line x1="520" y1="76" x2="840" y2="76" stroke="rgba(34,40,49,0.22)" stroke-width="1"/>
+      <text x="532" y="66" fill="#222831" font-size="12" font-weight="600" font-family="'Geist', sans-serif">public.notes</text>
+      <rect x="788" y="56" width="40" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.40)" stroke-width="0.8"/>
+      <text x="808" y="65" fill="#222831" opacity="0.8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TABLE</text>
+
+      <rect x="520" y="76" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="92" fill="#222831" font-size="12" font-family="'Geist', sans-serif">id</text>
+      <rect x="680" y="84" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="93" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">PK</text>
+      <text x="828" y="92" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">uuid</text>
+
+      <text x="532" y="116" fill="#222831" font-size="12" font-family="'Geist', sans-serif">user_id</text>
+      <rect x="680" y="108" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="117" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">FK</text>
+      <rect x="704" y="108" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="714" y="117" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="116" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">uuid</text>
+
+      <rect x="520" y="124" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="140" fill="#222831" font-size="12" font-family="'Geist', sans-serif">type</text>
+      <rect x="680" y="132" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="141" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="140" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <text x="532" y="164" fill="#222831" font-size="12" font-family="'Geist', sans-serif">title</text>
+      <text x="828" y="164" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <rect x="520" y="172" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="188" fill="#222831" font-size="12" font-family="'Geist', sans-serif">body</text>
+      <rect x="680" y="180" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="189" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="188" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <text x="532" y="212" fill="#222831" font-size="12" font-family="'Geist', sans-serif">color</text>
+      <text x="828" y="212" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <rect x="520" y="220" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="236" fill="#222831" font-size="12" font-family="'Geist', sans-serif">occurred_on</text>
+      <text x="828" y="236" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">date</text>
+
+      <text x="532" y="260" fill="#222831" font-size="12" font-family="'Geist', sans-serif">created_at</text>
+      <rect x="680" y="252" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="261" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="260" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">timestamptz</text>
+
+      <rect x="520" y="268" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="284" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">+ 2 sort_order, updated_at</text>
+
+      <line x1="520" y1="292" x2="840" y2="292" stroke="rgba(34,40,49,0.12)" stroke-width="0.8"/>
+      <text x="532" y="308" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">INDEXES</text>
+      <text x="532" y="324" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">idx_notes_user_type_occurred</text>
+      <text x="532" y="336" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">chk type + occurred_on</text>
+
+      <!-- public.api_tokens -->
+      <rect x="520" y="380" width="320" height="244" rx="6" fill="#f7f6fb"/>
+      <rect x="520" y="380" width="320" height="244" rx="6" fill="#ffffff" stroke="#222831" stroke-width="1"/>
+      <rect x="520" y="380" width="320" height="28" rx="6" fill="rgba(34,40,49,0.04)" stroke="none"/>
+      <rect x="520" y="400" width="320" height="8" fill="rgba(34,40,49,0.04)"/>
+      <line x1="520" y1="408" x2="840" y2="408" stroke="rgba(34,40,49,0.22)" stroke-width="1"/>
+      <text x="532" y="398" fill="#222831" font-size="12" font-weight="600" font-family="'Geist', sans-serif">public.api_tokens</text>
+      <rect x="788" y="388" width="40" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.40)" stroke-width="0.8"/>
+      <text x="808" y="397" fill="#222831" opacity="0.8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">TABLE</text>
+
+      <rect x="520" y="408" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="424" fill="#222831" font-size="12" font-family="'Geist', sans-serif">id</text>
+      <rect x="680" y="416" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="425" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">PK</text>
+      <text x="828" y="424" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">uuid</text>
+
+      <text x="532" y="448" fill="#222831" font-size="12" font-family="'Geist', sans-serif">user_id</text>
+      <rect x="680" y="440" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="449" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">FK</text>
+      <rect x="704" y="440" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="714" y="449" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="448" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">uuid</text>
+
+      <rect x="520" y="456" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="472" fill="#222831" font-size="12" font-family="'Geist', sans-serif">token_hash</text>
+      <rect x="680" y="464" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="473" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">UQ</text>
+      <rect x="704" y="464" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="714" y="473" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="472" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <text x="532" y="496" fill="#222831" font-size="12" font-family="'Geist', sans-serif">name</text>
+      <text x="828" y="496" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">text</text>
+
+      <rect x="520" y="504" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="520" fill="#222831" font-size="12" font-family="'Geist', sans-serif">revoked_at</text>
+      <text x="828" y="520" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">timestamptz</text>
+
+      <text x="532" y="544" fill="#222831" font-size="12" font-family="'Geist', sans-serif">created_at</text>
+      <rect x="680" y="536" width="20" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.35)" stroke-width="0.8"/>
+      <text x="690" y="545" fill="#222831" opacity="0.75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NN</text>
+      <text x="828" y="544" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end">timestamptz</text>
+
+      <rect x="520" y="552" width="320" height="24" fill="rgba(34,40,49,0.02)"/>
+      <text x="532" y="568" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">+ 1 last_used_at</text>
+
+      <line x1="520" y1="576" x2="840" y2="576" stroke="rgba(34,40,49,0.12)" stroke-width="0.8"/>
+      <text x="532" y="592" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">INDEXES</text>
+      <text x="532" y="608" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">uq_api_tokens_token_hash</text>
+      <text x="532" y="620" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">idx_api_tokens_user_id</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="656" x2="1240" y2="656" stroke="rgba(34,40,49,0.10)" stroke-width="0.8"/>
+      <text x="40" y="676" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="140" y="668" width="16" height="12" rx="2" fill="rgba(89,85,217,0.08)" stroke="#5955D9" stroke-width="1"/>
+      <text x="164" y="678" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">CASCADE target</text>
+      <rect x="300" y="668" width="16" height="12" rx="2" fill="#ffffff" stroke="#222831" stroke-width="1"/>
+      <text x="324" y="678" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">Table</text>
+      <rect x="400" y="668" width="24" height="12" rx="2" fill="none" stroke="rgba(34,40,49,0.20)" stroke-width="0.8" stroke-dasharray="4,4"/>
+      <text x="432" y="678" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">Schema</text>
+      <text x="520" y="678" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">PK FK UQ NN · constraint chips</text>
+      <text x="760" y="678" fill="#5c6270" font-size="8" font-family="'Geist Mono', monospace">RLS: user_id = auth.uid()  ·  token never stored plaintext</text>
+    </svg>
+  </div>
+</body>
+</html>
