@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import {
@@ -266,6 +267,17 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
   const [occurredOn, setOccurredOn] = useState(note.occurred_on ?? todayInTz())
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [canDismiss, setCanDismiss] = useState(false)
+
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const t = window.setTimeout(() => setCanDismiss(true), 400)
+    return () => {
+      document.body.style.overflow = prev
+      window.clearTimeout(t)
+    }
+  }, [])
 
   async function save(e) {
     e.preventDefault()
@@ -298,8 +310,14 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
     else onDeleted(note.id)
   }
 
-  return (
-    <div className="sheet" onClick={onClose} role="presentation">
+  return createPortal(
+    <div
+      className="sheet"
+      onClick={() => {
+        if (canDismiss) onClose()
+      }}
+      role="presentation"
+    >
       <form className="sticky-editor" onClick={(e) => e.stopPropagation()} onSubmit={save}>
         <label htmlFor="title">Título</label>
         <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -324,7 +342,8 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
           <button className="primary" type="submit" disabled={busy}>Guardar</button>
         </div>
       </form>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
