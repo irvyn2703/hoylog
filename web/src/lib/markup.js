@@ -6,7 +6,12 @@ export function parseBlocks(text) {
   let i = 0
   while (i < lines.length) {
     if (lines[i] === '') {
-      i += 1
+      let n = 0
+      while (i < lines.length && lines[i] === '') {
+        n += 1
+        i += 1
+      }
+      if (n > 1) blocks.push({ type: 'gap', lines: n - 1 })
       continue
     }
     if (UL.test(lines[i])) {

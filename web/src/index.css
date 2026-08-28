@@ -115,10 +115,21 @@ button, input, textarea {
 }
 
 .nav a.active, .chip.active {
-  border-color: var(--red-marker);
   color: var(--red-marker);
   transform: rotate(-1deg);
-  animation: stamp 0.45s cubic-bezier(.2,1.4,.3,1);
+}
+
+.chip {
+  position: relative;
+  z-index: 1;
+}
+
+.chip-pill {
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--red-marker);
+  border-radius: 999px;
+  pointer-events: none;
 }
 
 .primary {
@@ -140,10 +151,23 @@ button, input, textarea {
 
 .period {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
-  flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+.period-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.period-title {
+  min-width: 0;
+  text-align: center;
 }
 
 .period h2 {
@@ -151,41 +175,93 @@ button, input, textarea {
   font-size: 1.45rem;
   font-weight: 400;
   margin: 0;
-  flex: 1;
-  min-width: 180px;
+}
+
+.period-dates {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  text-align: center;
 }
 
 .masonry {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
+  align-items: start;
 }
 
 .week-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
 .week-col {
-  min-height: 120px;
-  animation: col-in 0.5s ease both;
+  min-width: 0;
 }
 
-.week-col:nth-child(1) { animation-delay: 0.02s; }
-.week-col:nth-child(2) { animation-delay: 0.06s; }
-.week-col:nth-child(3) { animation-delay: 0.1s; }
-.week-col:nth-child(4) { animation-delay: 0.14s; }
-.week-col:nth-child(5) { animation-delay: 0.18s; }
-.week-col:nth-child(6) { animation-delay: 0.22s; }
-.week-col:nth-child(7) { animation-delay: 0.26s; }
+.week-col.empty-day {
+  opacity: 0.55;
+}
+
+.week-col.empty-day h3 {
+  margin-bottom: 0;
+}
 
 .week-col h3 {
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  margin: 0 0 8px;
+  margin: 0 0 10px;
+}
+
+.week-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.week-notes .sticky {
+  min-height: 0;
+  max-width: none;
+}
+
+@media (min-width: 1020px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .board { max-width: 1180px; }
+}
+
+@media (min-width: 1540px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .board { max-width: 1440px; }
+}
+
+@media (min-width: 1800px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .board { max-width: 1680px; }
+}
+
+@media (min-width: 2060px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .board { max-width: 1920px; }
+}
+
+@media (min-width: 2320px) {
+  .week-grid,
+  .masonry { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .board { max-width: 2160px; }
 }
 
 .sticky {
@@ -199,9 +275,6 @@ button, input, textarea {
   border: 0;
   width: 100%;
   box-shadow: 2px 3px 0 rgba(28, 40, 52, 0.12);
-  transform: rotate(var(--tilt));
-  animation: pin-in 0.55s cubic-bezier(.2,1.3,.3,1) both;
-  transition: transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease;
 }
 
 .sticky::before {
@@ -214,17 +287,6 @@ button, input, textarea {
   transform: translateX(-50%) rotate(-2deg);
   background: var(--tape);
   opacity: 0.9;
-  animation: tape-press 0.4s 0.18s cubic-bezier(.2,1.5,.3,1) both;
-}
-
-.sticky:hover {
-  transform: translateY(-8px) rotate(calc(var(--tilt) * 1.6));
-  box-shadow: 6px 10px 0 rgba(28, 40, 52, 0.14);
-  z-index: 2;
-}
-
-.sticky:active {
-  transform: translateY(-2px) rotate(var(--tilt));
 }
 
 .sticky.yellow { background: var(--yellow); }
@@ -235,7 +297,6 @@ button, input, textarea {
 
 .sticky.archived {
   filter: grayscale(0.55) brightness(0.96);
-  opacity: 0.78;
 }
 
 .sticky.archived::before {
@@ -299,12 +360,6 @@ button, input, textarea {
 
 .rank:active { cursor: grabbing; }
 
-.sticky:nth-child(3n) { --tilt: -1.4deg; animation-delay: 0.05s; }
-.sticky:nth-child(3n+1) { --tilt: 1.1deg; animation-delay: 0.12s; }
-.sticky:nth-child(3n+2) { --tilt: -0.4deg; animation-delay: 0.2s; }
-.sticky:nth-child(4n) { animation-delay: 0.28s; }
-.sticky:nth-child(5n) { animation-delay: 0.36s; }
-
 .sticky h3 {
   font-family: var(--hand);
   font-size: 1.25rem;
@@ -325,6 +380,7 @@ button, input, textarea {
 
 .note-body p {
   margin: 0 0 0.45em;
+  white-space: pre-wrap;
 }
 
 .note-body p:last-child {
@@ -370,17 +426,7 @@ button, input, textarea {
   font-size: 1.4rem;
   color: var(--marker);
   padding: 24px 8px;
-  animation: scribble 1.2s ease both;
 }
-
-
-.week-col:nth-child(1) { animation-delay: 0.02s; }
-.week-col:nth-child(2) { animation-delay: 0.06s; }
-.week-col:nth-child(3) { animation-delay: 0.1s; }
-.week-col:nth-child(4) { animation-delay: 0.14s; }
-.week-col:nth-child(5) { animation-delay: 0.18s; }
-.week-col:nth-child(6) { animation-delay: 0.22s; }
-.week-col:nth-child(7) { animation-delay: 0.26s; }
 
 .fab {
   position: fixed;
@@ -397,13 +443,6 @@ button, input, textarea {
   cursor: pointer;
   box-shadow: 0 8px 0 var(--board-edge);
   z-index: 30;
-  animation: fab-pop 0.5s 0.4s cubic-bezier(.2,1.4,.3,1) both, fab-pulse 2.8s 1s ease-in-out infinite;
-  transition: transform 0.2s ease;
-}
-
-.fab:hover {
-  transform: scale(1.1) rotate(-12deg);
-  animation: none;
 }
 
 .sheet {
@@ -414,7 +453,6 @@ button, input, textarea {
   align-items: flex-end;
   justify-content: center;
   z-index: 40;
-  animation: veil 0.25s ease both;
   padding: 0;
 }
 
@@ -430,7 +468,6 @@ button, input, textarea {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  animation: sheet-up 0.4s cubic-bezier(.2,.85,.2,1) both;
 }
 
 @media (max-width: 860px) {
@@ -498,9 +535,7 @@ button, input, textarea {
 
 .login-card {
   width: min(420px, 100%);
-  transform: rotate(-1deg);
   box-shadow: 8px 10px 0 rgba(28,40,52,0.12);
-  animation: pin-in 0.6s cubic-bezier(.2,1.3,.3,1) both, login-float 4s 0.6s ease-in-out infinite;
 }
 
 .login-card h1 {
@@ -521,7 +556,6 @@ button, input, textarea {
 }
 
 @media (max-width: 860px) {
-  .week-grid { grid-template-columns: 1fr; }
   .board { border-width: 6px; box-shadow: inset 0 0 0 2px #f7fbfe, 0 10px 0 #8fa3b0; }
 }
 

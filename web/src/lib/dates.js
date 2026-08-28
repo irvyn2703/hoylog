@@ -65,16 +65,33 @@ export function shiftCursor(mode, cursor, dir) {
   return toIsoDate(d)
 }
 
-export function periodLabel(mode, cursor) {
+export function formatDmY(isoDate) {
+  const [year, month, day] = String(isoDate).split('-')
+  return `${day}-${month}-${year}`
+}
+
+export function periodHeading(mode, cursor) {
   const d = parseIso(cursor)
   if (mode === 'day') {
-    return d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    const weekday = d.toLocaleDateString('es-MX', { weekday: 'long' })
+    return `${weekday} · ${d.getFullYear()}`
   }
   if (mode === 'week') {
-    const { week, year, monday, sunday } = isoWeekInfo(cursor)
-    return `Semana ${week} · ${year}  (${monday} → ${sunday})`
+    const { week, year } = isoWeekInfo(cursor)
+    return `Semana ${week} · ${year}`
   }
-  return d.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+  const month = d.toLocaleDateString('es-MX', { month: 'long' })
+  return `${month} · ${d.getFullYear()}`
+}
+
+export function periodDates(mode, cursor) {
+  const { from, to } = periodRange(mode, cursor)
+  if (mode === 'day') return formatDmY(from)
+  return `${formatDmY(from)} → ${formatDmY(to)}`
+}
+
+export function periodLabel(mode, cursor) {
+  return `${periodHeading(mode, cursor)}  (${periodDates(mode, cursor)})`
 }
 
 export function weekdayLabel(isoDate) {
