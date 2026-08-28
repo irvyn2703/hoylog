@@ -2,6 +2,26 @@
 
 Pizarrón de avances diarios y notas atemporales. Vite + React + Supabase. MCP para subir el avance del día desde Cursor o Claude.
 
+## Publicar (GitHub Pages)
+
+La app queda en **https://irvyn2703.github.io/hoylog/**
+
+Cada push a `main` construye `web/` y la sube. En el repo: **Settings → Secrets and variables → Actions**:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+**Settings → Pages → Source:** GitHub Actions.
+
+Auth de Google, añade:
+
+- Supabase **Redirect URLs:** `https://irvyn2703.github.io/hoylog/**`
+- Google Cloud **Authorized JavaScript origins:** `https://irvyn2703.github.io`
+
+El callback de Google sigue siendo `https://vgnfgynqlcghduxxctpg.supabase.co/auth/v1/callback`.
+
+Local no cambia: `cd web && npm run dev` (base `/`).
+
 ## Arranque web
 
 ```bash
