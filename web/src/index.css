@@ -233,6 +233,72 @@ button, input, textarea {
 .sticky.lilac { background: var(--lilac); }
 .sticky.peach { background: var(--peach); }
 
+.sticky.archived {
+  filter: grayscale(0.55) brightness(0.96);
+  opacity: 0.78;
+}
+
+.sticky.archived::before {
+  background: #c8c4ba;
+}
+
+.file-stamp {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--hand);
+  font-size: 1rem;
+  color: var(--red-marker);
+  transform: rotate(-8deg);
+}
+
+.toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--marker);
+}
+
+.hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.rank-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: -8px 0 8px;
+}
+
+.rank-bar .ghost {
+  padding: 2px 8px;
+  min-width: 32px;
+}
+
+.rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(28, 40, 52, 0.12);
+  font-family: var(--hand);
+  font-size: 1.1rem;
+  cursor: grab;
+}
+
+.rank:active { cursor: grabbing; }
+
 .sticky:nth-child(3n) { --tilt: -1.4deg; animation-delay: 0.05s; }
 .sticky:nth-child(3n+1) { --tilt: 1.1deg; animation-delay: 0.12s; }
 .sticky:nth-child(3n+2) { --tilt: -0.4deg; animation-delay: 0.2s; }
@@ -250,6 +316,46 @@ button, input, textarea {
   margin: 0;
   font-size: 0.95rem;
   white-space: pre-wrap;
+}
+
+.note-body {
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.note-body p {
+  margin: 0 0 0.45em;
+}
+
+.note-body p:last-child {
+  margin-bottom: 0;
+}
+
+.note-body ul {
+  margin: 0.2em 0 0.45em;
+  padding-left: 1.15em;
+}
+
+.note-body li {
+  margin: 0.12em 0;
+}
+
+.note-body s {
+  text-decoration: line-through;
+  opacity: 0.72;
+}
+
+.mark-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.mark-bar .ghost {
+  min-width: 40px;
+  padding: 4px 10px;
+  font-weight: 700;
 }
 
 .sticky time {
@@ -278,8 +384,8 @@ button, input, textarea {
 
 .fab {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(16px, calc(16px + env(safe-area-inset-bottom, 0px)));
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -290,7 +396,7 @@ button, input, textarea {
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 8px 0 var(--board-edge);
-  z-index: 5;
+  z-index: 30;
   animation: fab-pop 0.5s 0.4s cubic-bezier(.2,1.4,.3,1) both, fab-pulse 2.8s 1s ease-in-out infinite;
   transition: transform 0.2s ease;
 }

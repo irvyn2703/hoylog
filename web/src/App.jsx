@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { supabase } from './lib/supabase'
@@ -10,7 +10,10 @@ import {
   todayInTz,
   weekdayLabel,
 } from './lib/dates'
+import { applyList, inlineTokens, parseBlocks, wrapInline } from './lib/markup'
 import { randomToken, sha256Hex } from './lib/token'
+import { applyVisibleOrder, nextEndSortOrder, sortByImportance } from './lib/order'
+import { filterNotesByActivity } from './lib/visibility'
 
 const COLORS = ['yellow', 'pink', 'mint', 'lilac', 'peach']
 
@@ -77,13 +80,28 @@ function Login() {
   )
 }
 
+function ActivityFilter({ value, onChange }) {
+  return (
+    <>
+      <button className={`chip${value === 'active' ? ' active' : ''}`} type="button" onClick={() => onChange('active')}>
+        Activas
+      </button>
+      <button className={`chip${value === 'inactive' ? ' active' : ''}`} type="button" onClick={() => onChange('inactive')}>
+        No activas
+      </button>
+    </>
+  )
+}
+
 function ProgressBoard({ userId }) {
   const [mode, setMode] = useState('week')
   const [cursor, setCursor] = useState(todayInTz())
   const [notes, setNotes] = useState([])
+  const [activity, setActivity] = useState('active')
   const [editing, setEditing] = useState(null)
   const [error, setError] = useState('')
   const range = useMemo(() => periodRange(mode, cursor), [mode, cursor])
+  const visible = useMemo(() => filterNotesByActivity(notes, activity), [notes, activity])
 
   useEffect(() => {
     let live = true
@@ -112,9 +130,9 @@ function ProgressBoard({ userId }) {
     const { monday } = isoWeekInfo(cursor)
     return Array.from({ length: 7 }, (_, i) => {
       const date = addDaysSafe(monday, i)
-      return { date, items: notes.filter((n) => n.occurred_on === date) }
+      return { date, items: visible.filter((n) => n.occurred_on === date) }
     })
-  }, [mode, cursor, notes])
+  }, [mode, cursor, visible])
 
   return (
     <>
@@ -128,6 +146,7 @@ function ProgressBoard({ userId }) {
             {m === 'day' ? 'Día' : m === 'week' ? 'Semana' : 'Mes'}
           </button>
         ))}
+        <ActivityFilter value={activity} onChange={setActivity} />
       </div>
       {error ? <p className="error">{error}</p> : null}
       {mode === 'week' && days ? (
@@ -141,22 +160,28 @@ function ProgressBoard({ userId }) {
             </section>
           ))}
         </div>
-      ) : notes.length ? (
+      ) : visible.length ? (
         <div className="masonry">
-          {notes.map((note) => (
+          {visible.map((note) => (
             <Sticky key={note.id} note={note} onClick={() => setEditing(note)} />
           ))}
         </div>
       ) : (
-        <p className="empty">Este periodo está en blanco. Pega el primer avance.</p>
+        <p className="empty">{activity === 'inactive' ? 'No hay avances en archivo en este periodo.' : 'Este periodo está en blanco. Pega el primer avance.'}</p>
       )}
-      <button className="fab" type="button" aria-label="Nuevo avance" onClick={() => setEditing({
-        type: 'progress',
-        body: '',
-        title: '',
-        color: 'yellow',
-        occurred_on: range.from > todayInTz() || range.to < todayInTz() ? range.from : todayInTz(),
-      })}>+</button>
+      {editing ? null : (
+        <Fab
+          label="Nuevo avance"
+          onClick={() => setEditing({
+            type: 'progress',
+            body: '',
+            title: '',
+            color: 'yellow',
+            is_active: true,
+            occurred_on: range.from > todayInTz() || range.to < todayInTz() ? range.from : todayInTz(),
+          })}
+        />
+      )}
       {editing ? (
         <Editor
           note={editing}
@@ -164,6 +189,7 @@ function ProgressBoard({ userId }) {
           onClose={() => setEditing(null)}
           onSaved={(saved) => {
             setNotes((curr) => upsert(curr, saved))
+            setActivity(saved.is_active === false ? 'inactive' : 'active')
             setEditing(null)
           }}
           onDeleted={(id) => {
@@ -188,8 +214,10 @@ function addDaysSafe(iso, n) {
 function NotesBoard({ userId }) {
   const [notes, setNotes] = useState([])
   const [q, setQ] = useState('')
+  const [activity, setActivity] = useState('active')
   const [editing, setEditing] = useState(null)
   const [error, setError] = useState('')
+  const dragId = useRef(null)
 
   useEffect(() => {
     let live = true
@@ -199,45 +227,97 @@ function NotesBoard({ userId }) {
         .select('*')
         .eq('user_id', userId)
         .eq('type', 'evergreen')
-        .order('created_at', { ascending: false })
       if (!live) return
       if (next) setError(next.message)
-      else setNotes(data ?? [])
+      else {
+        setError('')
+        setNotes(sortByImportance(data ?? []))
+      }
     })()
     return () => { live = false }
   }, [userId])
 
-  const shown = notes.filter((n) => {
+  const shown = filterNotesByActivity(notes, activity).filter((n) => {
     const hay = `${n.title ?? ''} ${n.body}`.toLowerCase()
     return hay.includes(q.trim().toLowerCase())
   })
+  const canRank = !q.trim() && shown.length > 1
+
+  async function persistOrder(next) {
+    const prev = new Map(notes.map((n) => [n.id, n.sort_order]))
+    setNotes(next)
+    const changed = next.filter((n) => n.sort_order !== prev.get(n.id))
+    if (!changed.length) return
+    const results = await Promise.all(
+      changed.map((n) => supabase.from('notes').update({ sort_order: n.sort_order }).eq('id', n.id)),
+    )
+    const fail = results.find((r) => r.error)
+    if (fail) setError(fail.error.message)
+    else setError('')
+  }
+
+  function moveShown(from, to) {
+    if (from < 0 || to < 0 || from === to || to >= shown.length) return
+    const ids = shown.map((n) => n.id)
+    const [id] = ids.splice(from, 1)
+    ids.splice(to, 0, id)
+    persistOrder(applyVisibleOrder(notes, ids))
+  }
 
   return (
     <>
       <div className="period">
         <h2>Notas que no caducan</h2>
+        <ActivityFilter value={activity} onChange={setActivity} />
         <input className="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" />
       </div>
+      {shown.length > 1 && !q.trim() ? (
+        <p className="hint">El número es la importancia. Súbela o bájala, o arrastra el número.</p>
+      ) : null}
       {error ? <p className="error">{error}</p> : null}
       {shown.length ? (
         <div className="masonry">
-          {shown.map((note) => (
-            <Sticky key={note.id} note={note} onClick={() => setEditing(note)} />
+          {shown.map((note, i) => (
+            <Sticky
+              key={note.id}
+              note={note}
+              rank={canRank ? i + 1 : null}
+              onClick={() => setEditing(note)}
+              onMove={canRank ? (delta) => moveShown(i, i + delta) : null}
+              onDragStart={canRank ? () => { dragId.current = note.id } : null}
+              onDrop={canRank ? () => {
+                const from = shown.findIndex((n) => n.id === dragId.current)
+                moveShown(from, i)
+                dragId.current = null
+              } : null}
+            />
           ))}
         </div>
       ) : (
-        <p className="empty">Todavía no hay notas pegadas.</p>
+        <p className="empty">{activity === 'inactive' ? 'No hay notas en archivo.' : 'Todavía no hay notas pegadas.'}</p>
       )}
-      <button className="fab" type="button" aria-label="Nueva nota" onClick={() => setEditing({
-        type: 'evergreen', body: '', title: '', color: 'mint', occurred_on: null,
-      })}>+</button>
+      {editing ? null : (
+        <Fab
+          label="Nueva nota"
+          onClick={() => setEditing({
+            type: 'evergreen',
+            body: '',
+            title: '',
+            color: 'mint',
+            is_active: true,
+            occurred_on: null,
+            sort_order: nextEndSortOrder(notes),
+          })}
+        />
+      )}
       {editing ? (
         <Editor
           note={editing}
           type="evergreen"
           onClose={() => setEditing(null)}
           onSaved={(saved) => {
-            setNotes((curr) => upsert(curr, saved))
+            setNotes((curr) => sortByImportance(upsert(curr, saved)))
+            setActivity(saved.is_active === false ? 'inactive' : 'active')
             setEditing(null)
           }}
           onDeleted={(id) => {
@@ -250,13 +330,76 @@ function NotesBoard({ userId }) {
   )
 }
 
-function Sticky({ note, onClick }) {
+function Fab({ label, onClick }) {
+  return createPortal(
+    <button className="fab" type="button" aria-label={label} onClick={onClick}>+</button>,
+    document.body,
+  )
+}
+
+function Inline({ text }) {
+  return inlineTokens(text).map((tok, i) => {
+    if (tok.t === 'b') return <strong key={i}>{tok.v}</strong>
+    if (tok.t === 's') return <s key={i}>{tok.v}</s>
+    return <span key={i}>{tok.v}</span>
+  })
+}
+
+function NoteBody({ text }) {
+  const blocks = parseBlocks(text)
+  if (!blocks.length) return null
   return (
-    <button type="button" className={`sticky ${note.color}`} onClick={onClick}>
+    <div className="note-body">
+      {blocks.map((block, i) => {
+        if (block.type === 'ul') {
+          return (
+            <ul key={i}>
+              {block.items.map((item, j) => <li key={j}><Inline text={item} /></li>)}
+            </ul>
+          )
+        }
+        return <p key={i}><Inline text={block.text} /></p>
+      })}
+    </div>
+  )
+}
+
+function Sticky({ note, onClick, rank, onMove, onDragStart, onDrop }) {
+  const archived = note.is_active === false
+  return (
+    <article
+      className={`sticky ${note.color}${archived ? ' archived' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      onDragOver={onDrop ? (e) => e.preventDefault() : undefined}
+      onDrop={onDrop ? (e) => { e.preventDefault(); onDrop() } : undefined}
+    >
+      {rank != null && onMove ? (
+        <div className="rank-bar" onClick={(e) => e.stopPropagation()}>
+          <button type="button" className="ghost" aria-label="Más importante" onClick={() => onMove(-1)}>↑</button>
+          <span
+            className="rank"
+            draggable
+            onDragStart={onDragStart}
+            title="Arrastra para cambiar la importancia"
+          >
+            {rank}
+          </span>
+          <button type="button" className="ghost" aria-label="Menos importante" onClick={() => onMove(1)}>↓</button>
+        </div>
+      ) : null}
       <h3>{note.title || (note.type === 'progress' ? 'Avance' : 'Nota')}</h3>
-      <p>{note.body}</p>
+      <NoteBody text={note.body} />
+      {archived ? <span className="file-stamp">archivo</span> : null}
       {note.occurred_on ? <time>{note.occurred_on}</time> : null}
-    </button>
+    </article>
   )
 }
 
@@ -264,10 +407,24 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
   const [title, setTitle] = useState(note.title ?? '')
   const [body, setBody] = useState(note.body ?? '')
   const [color, setColor] = useState(note.color ?? 'yellow')
+  const [isActive, setIsActive] = useState(note.is_active !== false)
   const [occurredOn, setOccurredOn] = useState(note.occurred_on ?? todayInTz())
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [canDismiss, setCanDismiss] = useState(false)
+  const bodyRef = useRef(null)
+
+  function formatBody(mutator) {
+    const el = bodyRef.current
+    const start = el?.selectionStart ?? body.length
+    const end = el?.selectionEnd ?? start
+    const next = mutator(body, start, end)
+    setBody(next.value)
+    requestAnimationFrame(() => {
+      el?.focus()
+      el?.setSelectionRange(next.selectionStart, next.selectionEnd)
+    })
+  }
 
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -288,13 +445,18 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
       title: title.trim() || null,
       body: body.trim(),
       color,
+      is_active: isActive,
       occurred_on: type === 'progress' ? occurredOn : null,
     }
     const { data: authData } = await supabase.auth.getUser()
     const userId = authData.user?.id
     const query = note.id
       ? supabase.from('notes').update(payload).eq('id', note.id).select().single()
-      : supabase.from('notes').insert({ ...payload, user_id: userId }).select().single()
+      : supabase.from('notes').insert({
+        ...payload,
+        user_id: userId,
+        sort_order: note.sort_order ?? 0,
+      }).select().single()
     const { data, error: next } = await query
     setBusy(false)
     if (next) setError(next.message)
@@ -322,7 +484,18 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
         <label htmlFor="title">Título</label>
         <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
         <label htmlFor="body">Texto</label>
-        <textarea id="body" required value={body} onChange={(e) => setBody(e.target.value)} />
+        <div className="mark-bar" onMouseDown={(e) => e.preventDefault()}>
+          <button type="button" className="ghost" aria-label="Negrita" onClick={() => formatBody((v, s, e) => wrapInline(v, s, e, '**', '**'))}>N</button>
+          <button type="button" className="ghost" aria-label="Tachado" onClick={() => formatBody((v, s, e) => wrapInline(v, s, e, '~~', '~~'))}><s>abc</s></button>
+          <button type="button" className="ghost" aria-label="Lista" onClick={() => formatBody((v, s, e) => applyList(v, s, e))}>•</button>
+        </div>
+        <textarea
+          id="body"
+          ref={bodyRef}
+          required
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+        />
         {type === 'progress' ? (
           <>
             <label htmlFor="when">Día del avance</label>
@@ -335,6 +508,11 @@ function Editor({ note, type, onClose, onSaved, onDeleted }) {
             <button key={c} type="button" className={`swatch ${c}${color === c ? ' on' : ''}`} style={{ background: `var(--${c})` }} onClick={() => setColor(c)} aria-label={c} />
           ))}
         </div>
+        <label className="toggle" htmlFor="active">
+          <input id="active" type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+          Activa en el pizarrón
+        </label>
+        <p className="hint">Si la quitas, sigue en la bitácora. Ábrela con el filtro No activas.</p>
         {error ? <p className="error">{error}</p> : null}
         <div className="row">
           {note.id ? <button className="ghost" type="button" onClick={remove} disabled={busy}>Borrar</button> : null}
