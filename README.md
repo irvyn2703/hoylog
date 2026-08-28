@@ -13,6 +13,8 @@ Cada push a `main` construye `web/` y la sube. En el repo: **Settings → Secret
 
 **Settings → Pages → Source:** GitHub Actions.
 
+Los secrets deben estar en el environment **github-pages** (como los pusiste) o a nivel repo. El job de *build* usa ese environment.
+
 Auth de Google, añade:
 
 - Supabase **Redirect URLs:** `https://irvyn2703.github.io/hoylog/**`
