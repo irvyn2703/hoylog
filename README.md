@@ -68,7 +68,7 @@ En Cursor (`~/.cursor/mcp.json` o `.cursor/mcp.json` del repo), además de supab
 }
 ```
 
-Crea el token en la pantalla **MCP** de la web (una vez visible). Tools: `log_progress`, `list_progress`.
+Crea el token en la pantalla **MCP** de la web (una vez visible). Tools: `log_progress`, `list_progress`, `update_note`.
 
 ## Modelo
 
