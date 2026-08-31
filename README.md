@@ -13,7 +13,7 @@ Cada push a `main` construye `web/` y la sube. En el repo: **Settings → Secret
 
 **Settings → Pages → Source:** GitHub Actions.
 
-Los secrets deben estar en el environment **github-pages** (como los pusiste) o a nivel repo. El job de *build* usa ese environment.
+Los secrets deben estar en el environment **github-pages** (como los pusiste) o a nivel repo. El job de _build_ usa ese environment.
 
 Auth de Google, añade:
 
@@ -48,12 +48,27 @@ En **URL configuration**:
 
 ## MCP
 
+Uso normal: **npx**, sin clonar el repo. Crea el token en la pantalla **MCP** de la web. Tools: `log_progress`, `list_progress`, `update_note`.
+
+```json
+"hoylog": {
+  "command": "npx",
+  "args": ["-y", "hoylog-mcp"],
+  "env": {
+    "SUPABASE_URL": "https://vgnfgynqlcghduxxctpg.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnbmZneW5xbGNnaGR1eHhjdHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NjQ4NzYsImV4cCI6MjEwMzQ0MDg3Nn0.4J2cab57sGUV74i8FHJLqtv4qF3iWRELb60T3gHXShg",
+    "HOYLOG_TOKEN": "hyl_…",
+    "TZ": "America/Mexico_City"
+  }
+}
+```
+
+La anon key es la pública del proyecto (la misma que la web). Cada quien solo cambia `HOYLOG_TOKEN`.
+
 ```bash
 cd mcp
 npm install
 ```
-
-En Cursor (`~/.cursor/mcp.json` o `.cursor/mcp.json` del repo), además de supabase:
 
 ```json
 "hoylog": {
@@ -68,7 +83,12 @@ En Cursor (`~/.cursor/mcp.json` o `.cursor/mcp.json` del repo), además de supab
 }
 ```
 
-Crea el token en la pantalla **MCP** de la web (una vez visible). Tools: `log_progress`, `list_progress`, `update_note`.
+Publicar el paquete (hace falta `npm login`):
+
+```bash
+cd mcp
+npm publish
+```
 
 ## Modelo
 

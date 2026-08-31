@@ -5,3 +5,4 @@ web/dist
 web/.env
 *.local
 .DS_Store
+*.tgz

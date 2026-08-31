@@ -1,14 +1,36 @@
 {
   "name": "hoylog-mcp",
-  "private": true,
-  "version": "0.1.0",
+  "version": "0.2.1",
+  "description": "MCP server for Hoylog daily notes. log_progress, list_progress, update_note.",
+  "license": "MIT",
   "type": "module",
   "bin": {
-    "hoylog-mcp": "./src/index.js"
+    "hoylog-mcp": "bin/hoylog-mcp.js"
   },
+  "files": [
+    "bin",
+    "src"
+  ],
   "scripts": {
     "start": "node src/index.js"
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/irvyn2703/hoylog.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://irvyn2703.github.io/hoylog/",
+  "bugs": {
+    "url": "https://github.com/irvyn2703/hoylog/issues"
+  },
+  "keywords": [
+    "mcp",
+    "hoylog",
+    "cursor"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",
     "@supabase/supabase-js": "^2.112.4",
