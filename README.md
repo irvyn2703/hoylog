@@ -63,33 +63,6 @@ Uso normal: **npx**, sin clonar el repo. Crea el token en la pantalla **MCP** de
 }
 ```
 
-La anon key es la pública del proyecto (la misma que la web). Cada quien solo cambia `HOYLOG_TOKEN`.
-
-```bash
-cd mcp
-npm install
-```
-
-```json
-"hoylog": {
-  "command": "node",
-  "args": ["/ABS/hoylog/mcp/src/index.js"],
-  "env": {
-    "SUPABASE_URL": "https://vgnfgynqlcghduxxctpg.supabase.co",
-    "SUPABASE_ANON_KEY": "tu_anon_key",
-    "HOYLOG_TOKEN": "hyl_…",
-    "TZ": "America/Mexico_City"
-  }
-}
-```
-
-Publicar el paquete (hace falta `npm login`):
-
-```bash
-cd mcp
-npm publish
-```
-
 ## Modelo
 
 Una tabla `notes`: `type = progress | evergreen`. `occurred_on` solo en avances. Semana/mes se calculan en la UI.
