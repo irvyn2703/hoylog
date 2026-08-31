@@ -28,4 +28,14 @@ En `~/.cursor/mcp.json`:
 1. Entra a https://irvyn2703.github.io/hoylog/ y crea un token en **MCP**.
 2. Sustituye `hyl_…` por ese token.
 
+Hace falta **Node 22+**. Claude Desktop a menudo toma un Node viejo de nvm (`v16`); usa la ruta absoluta a `npx` de Node 24 y pon `PATH` en `env`:
+
+```json
+"command": "/Users/irvyn/.nvm/versions/node/v24.16.0/bin/npx",
+"args": ["-y", "hoylog-mcp"],
+"env": {
+  "PATH": "/Users/irvyn/.nvm/versions/node/v24.16.0/bin:/usr/bin:/bin"
+}
+```
+
 Para desarrollar contra el repo local, usa `node` y la ruta a `mcp/src/index.js` en lugar de `npx`.

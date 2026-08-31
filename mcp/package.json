@@ -1,6 +1,6 @@
 {
   "name": "hoylog-mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MCP server for Hoylog daily notes. log_progress, list_progress, update_note.",
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,7 @@
     "start": "node src/index.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",

@@ -17,7 +17,7 @@ const supabase = createClient(url, key)
 
 const server = new McpServer({
   name: 'hoylog',
-  version: '0.2.1',
+  version: '0.2.2',
 })
 
 server.tool(
