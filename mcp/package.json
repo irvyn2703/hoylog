@@ -1,6 +1,6 @@
 {
   "name": "hoylog-mcp",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP server for Hoylog daily notes. log_progress, list_progress, update_note.",
   "license": "MIT",
   "type": "module",

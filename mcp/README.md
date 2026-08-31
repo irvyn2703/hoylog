@@ -4,9 +4,11 @@ Servidor MCP de [Hoylog](https://irvyn2703.github.io/hoylog/). Tools: `log_progr
 
 `SUPABASE_URL` y `SUPABASE_ANON_KEY` son las públicas del proyecto (la misma anon key que usa la web). **No** uses la `service_role`. Cada persona crea **su** `HOYLOG_TOKEN`.
 
-## Cursor
+Hace falta **Node 22 o superior**. En una terminal: `node -v`.
 
-En `~/.cursor/mcp.json`:
+## Cursor / Claude Desktop
+
+En `mcp.json` (Cursor: `~/.cursor/mcp.json`; Claude: `claude_desktop_config.json`):
 
 ```json
 {
@@ -28,14 +30,4 @@ En `~/.cursor/mcp.json`:
 1. Entra a https://irvyn2703.github.io/hoylog/ y crea un token en **MCP**.
 2. Sustituye `hyl_…` por ese token.
 
-Hace falta **Node 22+**. Claude Desktop a menudo toma un Node viejo de nvm (`v16`); usa la ruta absoluta a `npx` de Node 24 y pon `PATH` en `env`:
-
-```json
-"command": "/Users/irvyn/.nvm/versions/node/v24.16.0/bin/npx",
-"args": ["-y", "hoylog-mcp"],
-"env": {
-  "PATH": "/Users/irvyn/.nvm/versions/node/v24.16.0/bin:/usr/bin:/bin"
-}
-```
-
-Para desarrollar contra el repo local, usa `node` y la ruta a `mcp/src/index.js` en lugar de `npx`.
+Si Claude Desktop arranca un Node viejo (error `Headers is not defined`), no uses `npx` a secas. En tu máquina corre `which node` y `dirname "$(which npx)"` con Node 22+ activo, y pon esa ruta de **tu** `npx` en `command` y su carpeta `bin` en `env.PATH`.
